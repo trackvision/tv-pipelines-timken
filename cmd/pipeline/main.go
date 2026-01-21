@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/trackvision/tv-pipelines-template/configs"
 	"github.com/trackvision/tv-pipelines-template/pipelines"
@@ -12,32 +16,70 @@ import (
 	"go.uber.org/zap"
 )
 
+// maxRequestBodySize limits request body to prevent memory exhaustion
+const maxRequestBodySize = 1 << 20 // 1 MB
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 
-	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("/pipelines", pipelinesHandler)
-	http.HandleFunc("/run/template", runTemplateHandler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", healthHandler)
+	mux.HandleFunc("/pipelines", pipelinesHandler)
+	mux.HandleFunc("/run/template", runTemplateHandler)
+
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      mux,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 60 * time.Minute, // Long timeout for pipeline execution
+		IdleTimeout:  120 * time.Second,
+	}
+
+	// Graceful shutdown
+	done := make(chan struct{})
+	go func() {
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+		<-sigCh
+
+		logger.Info("Shutting down server...")
+
+		// Cloud Run gives 10 seconds for graceful shutdown
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		if err := server.Shutdown(ctx); err != nil {
+			logger.Error("Server shutdown error", zap.Error(err))
+		}
+		close(done)
+	}()
 
 	logger.Info("Starting pipeline service", zap.String("port", port))
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	if err := server.ListenAndServe(); err != http.ErrServerClosed {
 		logger.Fatal("Server failed", zap.Error(err))
 	}
+
+	<-done
+	logger.Info("Server stopped")
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
+	if err := json.NewEncoder(w).Encode(map[string]string{"status": "healthy"}); err != nil {
+		logger.Error("Failed to encode health response", zap.Error(err))
+	}
 }
 
 func pipelinesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]interface{}{
 		"pipelines": pipelines.List(),
-	})
+	}); err != nil {
+		logger.Error("Failed to encode pipelines response", zap.Error(err))
+	}
 }
 
 type runRequest struct {
@@ -56,6 +98,9 @@ func runTemplateHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
+	// Limit request body size to prevent memory exhaustion
+	r.Body = http.MaxBytesReader(w, r.Body, maxRequestBodySize)
 
 	var req runRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -92,18 +137,22 @@ func runTemplateHandler(w http.ResponseWriter, r *http.Request) {
 	_ = state // suppress unused warning for template
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(runResponse{
+	if err := json.NewEncoder(w).Encode(runResponse{
 		Success:  true,
 		Pipeline: "template",
 		ID:       req.ID,
-	})
+	}); err != nil {
+		logger.Error("Failed to encode run response", zap.Error(err))
+	}
 }
 
 func respondError(w http.ResponseWriter, msg string, code int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(runResponse{
+	if err := json.NewEncoder(w).Encode(runResponse{
 		Success: false,
 		Error:   msg,
-	})
+	}); err != nil {
+		logger.Error("Failed to encode error response", zap.Error(err))
+	}
 }

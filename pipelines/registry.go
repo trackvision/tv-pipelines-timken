@@ -68,16 +68,21 @@ func GetDescriptor(name string) (Descriptor, bool) {
 	return d, ok
 }
 
-// List returns a sorted list of all registered pipeline descriptor names
-func List() []string {
-	mu.RLock()
-	defer mu.RUnlock()
+// listNamesLocked returns sorted descriptor names. Caller must hold mu.
+func listNamesLocked() []string {
 	names := make([]string, 0, len(descriptors))
 	for name := range descriptors {
 		names = append(names, name)
 	}
 	sort.Strings(names)
 	return names
+}
+
+// List returns a sorted list of all registered pipeline descriptor names
+func List() []string {
+	mu.RLock()
+	defer mu.RUnlock()
+	return listNamesLocked()
 }
 
 // All returns all registered pipelines
@@ -100,7 +105,7 @@ func ListWithDescriptions() string {
 		return "No pipelines registered"
 	}
 
-	names := List()
+	names := listNamesLocked()
 	result := "Available pipelines:\n"
 	for _, name := range names {
 		d := descriptors[name]

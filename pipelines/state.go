@@ -1,11 +1,14 @@
 package pipelines
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/trackvision/tv-pipelines-template/configs"
 	"github.com/trackvision/tv-pipelines-template/tasks"
+	"github.com/trackvision/tv-shared-go/logger"
+	"go.uber.org/zap"
 )
 
 // State holds shared state between pipeline tasks
@@ -37,12 +40,35 @@ func NewState(cfg *configs.Env) *State {
 		Data:           make(map[string]interface{}),
 	}
 
-	// Initialize database connection if configured
-	if cfg.Database != nil {
-		state.DB = cfg.Database.Open()
-	}
-
 	return state
+}
+
+// InitDB initializes the database connection. Returns error if connection fails.
+// Call this separately from NewState to allow pipelines that don't need DB to skip it.
+func (s *State) InitDB() error {
+	if s.Config.Database == nil {
+		return fmt.Errorf("database configuration not set")
+	}
+	db := s.Config.Database.Open()
+	if db == nil {
+		return fmt.Errorf("database.Open() returned nil")
+	}
+	// Verify connection is working
+	if err := db.Ping(); err != nil {
+		return fmt.Errorf("database ping failed: %w", err)
+	}
+	s.DB = db
+	return nil
+}
+
+// Close releases resources held by the State.
+// Should be called when the pipeline is done.
+func (s *State) Close() {
+	if s.DB != nil {
+		if err := s.DB.Close(); err != nil {
+			logger.Error("Failed to close database connection", zap.Error(err))
+		}
+	}
 }
 
 // Set stores a value in the pipeline state (thread-safe)
