@@ -20,4 +20,5 @@ COPY --from=builder /pipeline .
 
 EXPOSE 8080
 
+ENTRYPOINT []
 CMD ["./pipeline"]
