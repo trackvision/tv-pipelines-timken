@@ -7,37 +7,31 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"github.com/trackvision/tv-pipelines-template/types"
 )
 
-func TestFetchCOCData_Success(t *testing.T) {
-	expectedItems := []types.COCItem{
+func TestFetchDirectusData_Success(t *testing.T) {
+	expectedItems := []DirectusItem{
 		{
-			SSCC:            "100538930005550017",
-			Serial:          "SN0001",
-			ProductID:       "PROD001",
-			COCDocumentID:   "DOC123",
-			COCDocumentDate: "2025-10-16",
+			ID:          "item-001",
+			Status:      "published",
+			DateCreated: "2025-01-01T00:00:00Z",
 		},
 		{
-			SSCC:   "100538930005550017",
-			Serial: "SN0002",
+			ID:     "item-002",
+			Status: "draft",
 		},
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Verify request
 		if r.Method != "GET" {
 			t.Errorf("expected GET, got %s", r.Method)
 		}
 
-		// Verify SSCC parameter (URL encoded)
-		sscc := r.URL.Query().Get("sscc")
-		if sscc != "100538930005550017" {
-			t.Errorf("expected sscc '100538930005550017', got %s", sscc)
+		q := r.URL.Query().Get("q")
+		if q != "test-query" {
+			t.Errorf("expected query 'test-query', got %s", q)
 		}
 
-		// Verify auth header
 		if r.Header.Get("Authorization") != "Bearer test-api-key" {
 			t.Errorf("expected Bearer auth header")
 		}
@@ -48,42 +42,42 @@ func TestFetchCOCData_Success(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	result, err := FetchCOCData(ctx, server.URL, "test-api-key", "100538930005550017")
+	result, err := FetchDirectusData(ctx, server.URL, "test-api-key", "test-query")
 	if err != nil {
-		t.Fatalf("FetchCOCData failed: %v", err)
+		t.Fatalf("FetchDirectusData failed: %v", err)
 	}
 
-	if result.SSCC != "100538930005550017" {
-		t.Errorf("expected SSCC '100538930005550017', got %s", result.SSCC)
+	if result.Query != "test-query" {
+		t.Errorf("expected Query 'test-query', got %s", result.Query)
 	}
 	if len(result.Items) != 2 {
 		t.Errorf("expected 2 items, got %d", len(result.Items))
 	}
-	if result.Items[0].Serial != "SN0001" {
-		t.Errorf("expected first serial 'SN0001', got %s", result.Items[0].Serial)
+	if result.Items[0].ID != "item-001" {
+		t.Errorf("expected first ID 'item-001', got %s", result.Items[0].ID)
 	}
 }
 
-func TestFetchCOCData_EmptySSCC(t *testing.T) {
+func TestFetchDirectusData_EmptyQuery(t *testing.T) {
 	ctx := context.Background()
-	_, err := FetchCOCData(ctx, "http://example.com", "key", "")
+	_, err := FetchDirectusData(ctx, "http://example.com", "key", "")
 	if err == nil {
-		t.Error("expected error for empty SSCC")
+		t.Error("expected error for empty query")
 	}
-	if !strings.Contains(err.Error(), "missing required 'sscc' parameter") {
-		t.Errorf("expected missing sscc error, got: %v", err)
+	if !strings.Contains(err.Error(), "missing required query parameter") {
+		t.Errorf("expected missing query error, got: %v", err)
 	}
 }
 
-func TestFetchCOCData_EmptyResponse(t *testing.T) {
+func TestFetchDirectusData_EmptyResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]types.COCItem{})
+		json.NewEncoder(w).Encode([]DirectusItem{})
 	}))
 	defer server.Close()
 
 	ctx := context.Background()
-	_, err := FetchCOCData(ctx, server.URL, "key", "100538930005550017")
+	_, err := FetchDirectusData(ctx, server.URL, "key", "test-query")
 	if err == nil {
 		t.Error("expected error for empty response")
 	}
@@ -92,7 +86,7 @@ func TestFetchCOCData_EmptyResponse(t *testing.T) {
 	}
 }
 
-func TestFetchCOCData_HTTPError(t *testing.T) {
+func TestFetchDirectusData_HTTPError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("internal server error"))
@@ -100,7 +94,7 @@ func TestFetchCOCData_HTTPError(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	_, err := FetchCOCData(ctx, server.URL, "key", "100538930005550017")
+	_, err := FetchDirectusData(ctx, server.URL, "key", "test-query")
 	if err == nil {
 		t.Error("expected error for HTTP 500")
 	}
@@ -109,7 +103,7 @@ func TestFetchCOCData_HTTPError(t *testing.T) {
 	}
 }
 
-func TestFetchCOCData_InvalidJSON(t *testing.T) {
+func TestFetchDirectusData_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte("not valid json"))
@@ -117,37 +111,35 @@ func TestFetchCOCData_InvalidJSON(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	_, err := FetchCOCData(ctx, server.URL, "key", "100538930005550017")
+	_, err := FetchDirectusData(ctx, server.URL, "key", "test-query")
 	if err == nil {
 		t.Error("expected error for invalid JSON")
 	}
 }
 
-func TestFetchCOCData_URLEncoding(t *testing.T) {
-	var receivedSSCC string
+func TestFetchDirectusData_URLEncoding(t *testing.T) {
+	var receivedQuery string
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedSSCC = r.URL.Query().Get("sscc")
+		receivedQuery = r.URL.Query().Get("q")
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]types.COCItem{{SSCC: receivedSSCC, Serial: "SN001"}})
+		json.NewEncoder(w).Encode([]DirectusItem{{ID: "item-1", Status: "published"}})
 	}))
 	defer server.Close()
 
 	ctx := context.Background()
-	// Test with special characters that need encoding
-	sscc := "test+value&special=chars"
-	_, err := FetchCOCData(ctx, server.URL, "key", sscc)
+	query := "test+value&special=chars"
+	_, err := FetchDirectusData(ctx, server.URL, "key", query)
 	if err != nil {
-		t.Fatalf("FetchCOCData failed: %v", err)
+		t.Fatalf("FetchDirectusData failed: %v", err)
 	}
 
-	// The server should receive the decoded value
-	if receivedSSCC != sscc {
-		t.Errorf("URL encoding issue: expected %q, got %q", sscc, receivedSSCC)
+	if receivedQuery != query {
+		t.Errorf("URL encoding issue: expected %q, got %q", query, receivedQuery)
 	}
 }
 
-func TestFetchCOCData_ContextCancellation(t *testing.T) {
+func TestFetchDirectusData_ContextCancellation(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-r.Context().Done():
@@ -157,9 +149,9 @@ func TestFetchCOCData_ContextCancellation(t *testing.T) {
 	defer server.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // Cancel immediately
+	cancel()
 
-	_, err := FetchCOCData(ctx, server.URL, "key", "100538930005550017")
+	_, err := FetchDirectusData(ctx, server.URL, "key", "test-query")
 	if err == nil {
 		t.Error("expected error for cancelled context")
 	}

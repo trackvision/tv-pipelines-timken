@@ -12,6 +12,7 @@ import (
 )
 
 // FetchProductByGTIN retrieves a product from TiDB using its GTIN
+// This is a template example - customize the query and type for your use case
 func FetchProductByGTIN(ctx context.Context, db *sqlx.DB, gtin string) (*types.Product, error) {
 	logger.Info("Fetching product by GTIN", zap.String("gtin", gtin))
 
@@ -48,6 +49,7 @@ func FetchProductByGTIN(ctx context.Context, db *sqlx.DB, gtin string) (*types.P
 }
 
 // FetchProductsByGTINs retrieves multiple products by their GTINs
+// This is a template example - customize the query and type for your use case
 func FetchProductsByGTINs(ctx context.Context, db *sqlx.DB, gtins []string) ([]types.Product, error) {
 	if len(gtins) == 0 {
 		return nil, nil
