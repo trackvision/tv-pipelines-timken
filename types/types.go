@@ -1,5 +1,19 @@
 package types
 
+import "time"
+
+// Product represents a product record in TiDB
+type Product struct {
+	ID          string     `db:"id" json:"id"`
+	GTIN        string     `db:"gtin" json:"gtin"`
+	Name        string     `db:"name" json:"name"`
+	Description string     `db:"description" json:"description"`
+	Brand       string     `db:"brand" json:"brand"`
+	Status      string     `db:"status" json:"status"`
+	DateCreated time.Time  `db:"date_created" json:"date_created"`
+	DateUpdated *time.Time `db:"date_updated" json:"date_updated,omitempty"`
+}
+
 // COCItem represents a single item from the COC API response
 type COCItem struct {
 	SSCC                     string   `json:"sscc"`

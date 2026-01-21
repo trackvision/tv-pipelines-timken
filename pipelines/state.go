@@ -3,6 +3,7 @@ package pipelines
 import (
 	"sync"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/trackvision/tv-pipelines-template/configs"
 	"github.com/trackvision/tv-pipelines-template/tasks"
 )
@@ -17,6 +18,9 @@ type State struct {
 	// DirectusClient is the shared Directus API client
 	DirectusClient *tasks.DirectusClient
 
+	// DB is the shared database connection (TiDB)
+	DB *sqlx.DB
+
 	// mu protects Data from concurrent access
 	mu sync.RWMutex
 
@@ -27,11 +31,18 @@ type State struct {
 
 // NewState creates a new pipeline state with initialized maps
 func NewState(cfg *configs.Env) *State {
-	return &State{
+	state := &State{
 		Config:         cfg,
 		DirectusClient: tasks.NewDirectusClient(cfg.CMSBaseURL, cfg.DirectusCMSAPIKey),
 		Data:           make(map[string]interface{}),
 	}
+
+	// Initialize database connection if configured
+	if cfg.Database != nil {
+		state.DB = cfg.Database.Open()
+	}
+
+	return state
 }
 
 // Set stores a value in the pipeline state (thread-safe)
