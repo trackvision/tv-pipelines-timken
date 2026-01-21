@@ -1,16 +1,17 @@
+# syntax=docker/dockerfile:1
 FROM golang:1.24-bullseye AS builder
 
-ARG GH_PAT
 ENV GOPRIVATE=github.com/trackvision
 
 WORKDIR /app
 
-# Configure git to use PAT for private repos
-RUN git config --global url."https://${GH_PAT}@github.com/".insteadOf "https://github.com/"
+# Configure git to use SSH for private repos
+RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+RUN git config --global url."git@github.com:".insteadOf "https://github.com/"
 
 COPY go.mod go.sum ./
 
-RUN go mod download
+RUN --mount=type=ssh go mod download
 
 COPY . .
 
