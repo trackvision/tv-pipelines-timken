@@ -1,4 +1,4 @@
-module timken-etl
+module github.com/trackvision/tv-pipelines-template
 
 go 1.24.0
 
@@ -8,14 +8,12 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
 	github.com/chromedp/chromedp v0.14.2
 	github.com/fieldryand/goflow/v2 v2.2.1
-	github.com/trackvision/tv-shared-go/env v1.0.1
 	github.com/trackvision/tv-shared-go/logger v1.0.1
 	go.uber.org/zap v1.27.0
 )
 
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect
-	github.com/caarlos0/env/v9 v9.0.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/ef-ds/deque v1.0.4 // indirect
@@ -31,7 +29,6 @@ require (
 	github.com/gobwas/ws v1.4.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/kr/pretty v0.3.0 // indirect

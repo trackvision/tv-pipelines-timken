@@ -1,4 +1,4 @@
-# Timken ETL - Claude Code Instructions
+# Pipeline Service - Claude Code Instructions
 
 ## Project Overview
 
@@ -10,7 +10,7 @@ Multi-pipeline ETL service deployed as a Cloud Run Service. HTTP API accepts POS
 - **Pipeline Registry** (`pipelines/registry.go`): Pipeline interface and discovery
 - **Pipeline State** (`pipelines/state.go`): Shared state between pipeline tasks
 - **Individual Pipelines** (`pipelines/<name>/`): Each pipeline has its own config and implementation
-- **Tasks** (`tasks/`): Reusable task implementations (Directus, email, PDF generation)
+- **Tasks** (`tasks/`): Reusable task implementations
 
 ## Key Patterns
 
@@ -75,12 +75,11 @@ data := state.Get(KeyMyData).(*MyType)
 # Run all tests
 go test ./...
 
-# Test specific SSCC
-make run-once SSCC=100538930005550017
+# Run HTTP server locally
+make run
 
 # Test via HTTP API locally
-make run
-curl -X POST http://localhost:8080/run/coc -d '{"sscc":"100538930005550017"}'
+curl -X POST http://localhost:8080/run/<pipeline> -d '{"param":"value"}'
 ```
 
 ## Environment
@@ -88,12 +87,3 @@ curl -X POST http://localhost:8080/run/coc -d '{"sscc":"100538930005550017"}'
 - **Runtime**: Cloud Run Service (max 60 min timeout)
 - **Config**: Environment variables loaded via `github.com/trackvision/tv-shared-go/env`
 - **Logging**: Structured JSON via `github.com/trackvision/tv-shared-go/logger`
-
-## COC Pipeline Flow
-
-1. `fetch_coc_data` - Fetch data from Timken COC API (parallel)
-2. `generate_pdf` - Generate PDF from COC viewer (parallel)
-3. `prepare_record` - Prepare certification record
-4. `create_certification` - Create in Directus
-5. `upload_pdf` - Upload PDF to Directus
-6. `send_email` - Send notification emails

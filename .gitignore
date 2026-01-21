@@ -1,7 +1,7 @@
 # Binaries
 bin/
 pipeline
-coc-pipeline
+*.exe
 
 # Environment
 .env
@@ -13,7 +13,8 @@ coc-pipeline
 # OS
 .DS_Store
 
-# Temp files
+# Logs
 *.log
-todo.md
-migration-plan.md
+
+# Test artifacts
+coverage.out
