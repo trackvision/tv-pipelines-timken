@@ -245,6 +245,111 @@ curl -X POST http://localhost:8080/run/template -d '{"id":"test-123"}'
 ## Cloud Run Considerations
 
 - **Stateless**: No persistent state between requests; use DB or external storage
-- **Timeout**: Up to 60 minutes per request for long-running pipelines
+- **Timeout**: Up to 60 minutes per request for long-running pipelines (configurable via `gcloud run services update --timeout=3600`)
 - **Cold starts**: First request may be slower; keep binary small, minimize init work
 - **Concurrency**: Multiple requests can hit same instance; state is per-request via handler
+
+## Processing Massive Record Sets
+
+When processing large datasets (e.g., 200K records), pipelines may be interrupted mid-execution. Use checkpointing to enable resumption.
+
+### Checkpointing Strategies
+
+| Scenario | Strategy | Description |
+|----------|----------|-------------|
+| Sequential tasks | Task-level | Track which tasks (fetch, process, save) completed |
+| Batch processing | Cursor-based | Track last processed record ID |
+| Idempotent ops | Mark-as-processed | Flag records when done |
+| Unordered data | Batch numbers | Process in fixed-size chunks |
+
+### Schema for Resumable Pipelines
+
+```sql
+-- Pipeline run tracking
+CREATE TABLE pipeline_run (
+    id VARCHAR(36) PRIMARY KEY,
+    pipeline_name VARCHAR(100) NOT NULL,
+    input_id VARCHAR(255) NOT NULL,
+    status ENUM('running', 'completed', 'failed') NOT NULL DEFAULT 'running',
+    started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    error_message TEXT,
+    INDEX idx_resumable (pipeline_name, input_id, status)
+);
+
+-- Cursor for batch processing
+CREATE TABLE pipeline_cursor (
+    run_id VARCHAR(36) PRIMARY KEY,
+    last_processed_id VARCHAR(255),
+    processed_count INT DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+### Cursor-Based Processing Pattern
+
+```go
+func (o *ProcessRecordsOp) Run() (interface{}, error) {
+    ctx := o.pipeline.state.Ctx
+    db := o.pipeline.state.DB
+    runID := o.pipeline.state.GetString(KeyRunID)
+
+    // Load cursor (resume point)
+    var cursor string
+    db.GetContext(ctx, &cursor,
+        "SELECT last_processed_id FROM pipeline_cursor WHERE run_id = ?", runID)
+
+    for {
+        // Fetch batch after cursor
+        var records []Record
+        err := db.SelectContext(ctx, &records, `
+            SELECT * FROM source_table
+            WHERE id > ?
+            ORDER BY id
+            LIMIT 1000`, cursor)
+        if err != nil || len(records) == 0 {
+            break
+        }
+
+        for _, record := range records {
+            if err := ctx.Err(); err != nil {
+                return nil, fmt.Errorf("cancelled: %w", err)
+            }
+
+            process(record)
+            cursor = record.ID
+
+            // Checkpoint every 100 records
+            if processedCount % 100 == 0 {
+                db.ExecContext(ctx, `
+                    INSERT INTO pipeline_cursor (run_id, last_processed_id, processed_count)
+                    VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        last_processed_id = VALUES(last_processed_id),
+                        processed_count = VALUES(processed_count)`,
+                    runID, cursor, processedCount)
+            }
+        }
+    }
+    return nil, nil
+}
+```
+
+### Alternative: Mark-as-Processed
+
+If operations are idempotent, mark records as processed:
+
+```go
+// Query only unprocessed records
+records, _ := db.SelectContext(ctx, &records, `
+    SELECT * FROM product
+    WHERE pipeline_processed_at IS NULL
+    LIMIT 1000`)
+
+// After processing each record
+db.ExecContext(ctx,
+    "UPDATE product SET pipeline_processed_at = NOW() WHERE id = ?",
+    record.ID)
+```
+
+This approach naturally resumes from where it left off without explicit cursor tracking.
