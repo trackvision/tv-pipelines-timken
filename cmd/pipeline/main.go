@@ -94,6 +94,8 @@ type runResponse struct {
 }
 
 func runTemplateHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context() // Use request context for cancellation propagation
+
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -121,6 +123,7 @@ func runTemplateHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Create pipeline state
 	state := pipelines.NewState(cfg)
+	defer state.Close() // Clean up resources when done
 
 	// Create and run pipeline
 	// TODO: Import and use your pipeline package
@@ -134,6 +137,7 @@ func runTemplateHandler(w http.ResponseWriter, r *http.Request) {
 	//     return
 	// }
 
+	_ = ctx   // Pass ctx to pipeline operations for cancellation
 	_ = state // suppress unused warning for template
 
 	w.Header().Set("Content-Type", "application/json")

@@ -42,7 +42,7 @@ func TestFetchDirectusData_Success(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	result, err := FetchDirectusData(ctx, server.URL, "test-api-key", "test-query")
+	result, err := FetchDirectusData(ctx, nil, server.URL, "test-api-key", "test-query")
 	if err != nil {
 		t.Fatalf("FetchDirectusData failed: %v", err)
 	}
@@ -60,7 +60,7 @@ func TestFetchDirectusData_Success(t *testing.T) {
 
 func TestFetchDirectusData_EmptyQuery(t *testing.T) {
 	ctx := context.Background()
-	_, err := FetchDirectusData(ctx, "http://example.com", "key", "")
+	_, err := FetchDirectusData(ctx, nil, "http://example.com", "key", "")
 	if err == nil {
 		t.Error("expected error for empty query")
 	}
@@ -77,7 +77,7 @@ func TestFetchDirectusData_EmptyResponse(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	_, err := FetchDirectusData(ctx, server.URL, "key", "test-query")
+	_, err := FetchDirectusData(ctx, nil, server.URL, "key", "test-query")
 	if err == nil {
 		t.Error("expected error for empty response")
 	}
@@ -94,7 +94,7 @@ func TestFetchDirectusData_HTTPError(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	_, err := FetchDirectusData(ctx, server.URL, "key", "test-query")
+	_, err := FetchDirectusData(ctx, nil, server.URL, "key", "test-query")
 	if err == nil {
 		t.Error("expected error for HTTP 500")
 	}
@@ -111,7 +111,7 @@ func TestFetchDirectusData_InvalidJSON(t *testing.T) {
 	defer server.Close()
 
 	ctx := context.Background()
-	_, err := FetchDirectusData(ctx, server.URL, "key", "test-query")
+	_, err := FetchDirectusData(ctx, nil, server.URL, "key", "test-query")
 	if err == nil {
 		t.Error("expected error for invalid JSON")
 	}
@@ -129,7 +129,7 @@ func TestFetchDirectusData_URLEncoding(t *testing.T) {
 
 	ctx := context.Background()
 	query := "test+value&special=chars"
-	_, err := FetchDirectusData(ctx, server.URL, "key", query)
+	_, err := FetchDirectusData(ctx, nil, server.URL, "key", query)
 	if err != nil {
 		t.Fatalf("FetchDirectusData failed: %v", err)
 	}
@@ -151,7 +151,7 @@ func TestFetchDirectusData_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	_, err := FetchDirectusData(ctx, server.URL, "key", "test-query")
+	_, err := FetchDirectusData(ctx, nil, server.URL, "key", "test-query")
 	if err == nil {
 		t.Error("expected error for cancelled context")
 	}

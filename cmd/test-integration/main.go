@@ -36,7 +36,7 @@ func main() {
 			logger.Warn("DIRECTUS_API_KEY not set, skipping Directus test")
 		} else {
 			logger.Info("Testing Directus fetch...", zap.String("url", *directusURL))
-			data, err := tasks.FetchDirectusData(ctx, *directusURL, apiKey, *query)
+			data, err := tasks.FetchDirectusData(ctx, nil, *directusURL, apiKey, *query)
 			if err != nil {
 				logger.Error("Failed to fetch Directus data", zap.Error(err))
 			} else {

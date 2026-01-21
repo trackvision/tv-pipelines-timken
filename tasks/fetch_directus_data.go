@@ -7,14 +7,10 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/trackvision/tv-shared-go/logger"
 	"go.uber.org/zap"
 )
-
-// Shared HTTP client for reuse across calls
-var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // DirectusItem represents a generic item from a Directus API response
 // Customize this struct for your specific use case
@@ -34,11 +30,16 @@ type DirectusData struct {
 
 // FetchDirectusData fetches data from a Directus Flow or API endpoint
 // This is a template - customize the URL pattern and response handling for your use case
-func FetchDirectusData(ctx context.Context, apiURL, apiKey, queryParam string) (*DirectusData, error) {
+// Pass nil for client to use a default client (respects context timeout)
+func FetchDirectusData(ctx context.Context, client *http.Client, apiURL, apiKey, queryParam string) (*DirectusData, error) {
 	logger.Info("Fetching Directus data", zap.String("query", queryParam))
 
 	if queryParam == "" {
 		return nil, fmt.Errorf("missing required query parameter")
+	}
+
+	if client == nil {
+		client = http.DefaultClient
 	}
 
 	requestURL := fmt.Sprintf("%s?q=%s", apiURL, url.QueryEscape(queryParam))
@@ -52,7 +53,7 @@ func FetchDirectusData(ctx context.Context, apiURL, apiKey, queryParam string) (
 		req.Header.Set("Authorization", "Bearer "+apiKey)
 	}
 
-	resp, err := httpClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("API request failed: %w", err)
 	}
