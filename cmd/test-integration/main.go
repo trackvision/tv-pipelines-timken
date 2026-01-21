@@ -60,7 +60,11 @@ func main() {
 		if err != nil {
 			logger.Error("Failed to connect to database", zap.Error(err))
 		} else {
-			defer db.Close()
+			defer func() {
+				if cerr := db.Close(); cerr != nil {
+					logger.Error("Failed to close database", zap.Error(cerr))
+				}
+			}()
 
 			product, err := tasks.FetchProductByGTIN(ctx, db, *gtin)
 			if err != nil {

@@ -25,6 +25,9 @@ cd my-pipeline-service
 # Install dependencies
 make deps
 
+# IMPORTANT: Install pre-push hooks (runs go vet, golangci-lint, tests before push)
+make setup-hooks
+
 # Run locally
 export CMS_BASE_URL="https://your-directus.com"
 export DIRECTUS_CMS_API_KEY="your-api-key"
@@ -173,6 +176,9 @@ err = db.SelectContext(ctx, &products, query, args...)
 ## Development
 
 ```bash
+# First time setup - install pre-push hooks
+make setup-hooks
+
 # Build
 make build
 
@@ -182,15 +188,24 @@ make run
 # List pipelines
 make list
 
-# Run tests
-make test
+# Run all checks (vet + lint + test) - do this before committing!
+make check
 
-# Format code
-make fmt
-
-# Lint
-make lint
+# Individual commands
+make vet       # Run go vet
+make lint      # Run golangci-lint
+make test      # Run tests
+make fmt       # Format code
 ```
+
+### Pre-push Hook
+
+The pre-push hook (installed via `make setup-hooks`) automatically runs before each `git push`:
+- `go vet ./...`
+- `golangci-lint run ./...`
+- `go test ./...`
+
+If any check fails, the push is blocked until you fix the issues.
 
 ## CI/CD
 

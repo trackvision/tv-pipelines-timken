@@ -14,7 +14,9 @@ func TestFetchProductByGTIN_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close() // sqlmock Close() doesn't need error checking
+	}()
 
 	sqlxDB := sqlx.NewDb(db, "mysql")
 
@@ -51,7 +53,9 @@ func TestFetchProductByGTIN_NotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close() // sqlmock Close() doesn't need error checking
+	}()
 
 	sqlxDB := sqlx.NewDb(db, "mysql")
 
@@ -80,7 +84,9 @@ func TestFetchProductsByGTINs_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close() // sqlmock Close() doesn't need error checking
+	}()
 
 	sqlxDB := sqlx.NewDb(db, "mysql")
 
@@ -113,7 +119,9 @@ func TestFetchProductsByGTINs_EmptyList(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create sqlmock: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close() // sqlmock Close() doesn't need error checking
+	}()
 
 	sqlxDB := sqlx.NewDb(db, "mysql")
 

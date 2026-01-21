@@ -57,7 +57,11 @@ func FetchDirectusData(ctx context.Context, client *http.Client, apiURL, apiKey,
 	if err != nil {
 		return nil, fmt.Errorf("API request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			logger.Warn("Failed to close response body", zap.Error(cerr))
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

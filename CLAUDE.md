@@ -1,5 +1,24 @@
 # Pipeline Service Template - Claude Code Instructions
 
+## IMPORTANT: Code Quality Checks
+
+**Before any commit or push, always run:**
+```bash
+make check   # Runs go vet, golangci-lint, and tests
+```
+
+**First time setup (after cloning):**
+```bash
+make setup-hooks   # Installs pre-push hook that enforces checks
+```
+
+If the user asks to commit or push changes:
+1. First run `make check` to verify all checks pass
+2. If checks fail, fix the issues before committing
+3. Remind the user to run `make setup-hooks` if they haven't already
+
+The pre-push hook automatically blocks pushes if `go vet`, `golangci-lint`, or tests fail.
+
 ## Project Overview
 
 Go pipeline service template for Cloud Run. HTTP API accepts POST requests with pipeline parameters, executes using Goflow for DAG orchestration, and returns JSON results.
@@ -97,8 +116,10 @@ state.Set(KeyFetchedData, data)
 // Get data with type assertion
 data := state.Get(KeyFetchedData).(*MyType)
 
-// Or use the generic helper
-data, err := getStateValue[MyType](p, KeyFetchedData)
+// Context for cancellation is available via state.Ctx
+if err := state.Ctx.Err(); err != nil {
+    return nil, fmt.Errorf("cancelled: %w", err)
+}
 ```
 
 ### Goflow Operators
@@ -153,6 +174,32 @@ result, err := client.UploadFile(ctx, tasks.UploadFileParams{
     Content:  pdfBytes,
     FolderID: "folder-uuid",
 })
+```
+
+## Getting Started
+
+```bash
+# Install dependencies
+make deps
+
+# Install pre-push git hooks (runs go vet, golangci-lint, tests before push)
+make setup-hooks
+
+# Install golangci-lint if not already installed
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+```
+
+## Development Workflow
+
+```bash
+# Run all checks (vet, lint, test) before committing
+make check
+
+# Individual commands
+make vet      # Run go vet
+make lint     # Run golangci-lint
+make test     # Run tests
+make fmt      # Format code
 ```
 
 ## Testing

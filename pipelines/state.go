@@ -1,6 +1,7 @@
 package pipelines
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -15,6 +16,9 @@ import (
 // Common fields are defined here, pipeline-specific data goes in the Data map
 // State is safe for concurrent access via Get/Set methods
 type State struct {
+	// Ctx is the context for cancellation and timeout propagation
+	Ctx context.Context
+
 	// Config holds common environment configuration
 	Config *configs.Env
 
@@ -33,8 +37,9 @@ type State struct {
 }
 
 // NewState creates a new pipeline state with initialized maps
-func NewState(cfg *configs.Env) *State {
+func NewState(ctx context.Context, cfg *configs.Env) *State {
 	state := &State{
+		Ctx:            ctx,
 		Config:         cfg,
 		DirectusClient: tasks.NewDirectusClient(cfg.CMSBaseURL, cfg.DirectusCMSAPIKey),
 		Data:           make(map[string]interface{}),

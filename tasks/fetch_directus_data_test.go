@@ -37,7 +37,9 @@ func TestFetchDirectusData_Success(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(expectedItems)
+		if err := json.NewEncoder(w).Encode(expectedItems); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -72,7 +74,9 @@ func TestFetchDirectusData_EmptyQuery(t *testing.T) {
 func TestFetchDirectusData_EmptyResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]DirectusItem{})
+		if err := json.NewEncoder(w).Encode([]DirectusItem{}); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -89,7 +93,9 @@ func TestFetchDirectusData_EmptyResponse(t *testing.T) {
 func TestFetchDirectusData_HTTPError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal server error"))
+		if _, err := w.Write([]byte("internal server error")); err != nil {
+			t.Fatalf("failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -106,7 +112,9 @@ func TestFetchDirectusData_HTTPError(t *testing.T) {
 func TestFetchDirectusData_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte("not valid json"))
+		if _, err := w.Write([]byte("not valid json")); err != nil {
+			t.Fatalf("failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -123,7 +131,9 @@ func TestFetchDirectusData_URLEncoding(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		receivedQuery = r.URL.Query().Get("q")
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]DirectusItem{{ID: "item-1", Status: "published"}})
+		if err := json.NewEncoder(w).Encode([]DirectusItem{{ID: "item-1", Status: "published"}}); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -141,10 +151,8 @@ func TestFetchDirectusData_URLEncoding(t *testing.T) {
 
 func TestFetchDirectusData_ContextCancellation(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		select {
-		case <-r.Context().Done():
-			return
-		}
+		// Wait for context cancellation
+		<-r.Context().Done()
 	}))
 	defer server.Close()
 

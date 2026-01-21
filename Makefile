@@ -1,4 +1,4 @@
-.PHONY: build test run run-once clean deps fmt lint
+.PHONY: build test run run-once clean deps fmt lint vet check setup-hooks
 
 # Build the unified pipeline binary
 build:
@@ -33,6 +33,21 @@ deps:
 fmt:
 	go fmt ./...
 
+# Static analysis
+vet:
+	go vet ./...
+
 # Lint
 lint:
-	golangci-lint run
+	golangci-lint run ./...
+
+# Run all checks (vet, lint, test)
+check: vet lint test
+
+# Install git hooks for pre-push checks
+setup-hooks:
+	@echo "Installing pre-push hook..."
+	@cp scripts/pre-push .git/hooks/pre-push
+	@chmod +x .git/hooks/pre-push
+	@echo "Pre-push hook installed successfully!"
+	@echo "Hook will run: go vet, golangci-lint, go test before each push"

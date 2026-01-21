@@ -28,7 +28,9 @@ func TestDirectusClient_PostItem_Success(t *testing.T) {
 		// Read and verify body
 		body, _ := io.ReadAll(r.Body)
 		var item map[string]any
-		json.Unmarshal(body, &item)
+		if err := json.Unmarshal(body, &item); err != nil {
+			t.Fatalf("failed to unmarshal request body: %v", err)
+		}
 		if item["name"] != "test item" {
 			t.Errorf("expected name 'test item', got %v", item["name"])
 		}
@@ -36,12 +38,14 @@ func TestDirectusClient_PostItem_Success(t *testing.T) {
 		// Return success response
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]any{
+		if err := json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]any{
 				"id":   "created-id-123",
 				"name": "test item",
 			},
-		})
+		}); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -61,7 +65,9 @@ func TestDirectusClient_PostItem_Success(t *testing.T) {
 func TestDirectusClient_PostItem_Error(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"errors": [{"message": "validation failed"}]}`))
+		if _, err := w.Write([]byte(`{"errors": [{"message": "validation failed"}]}`)); err != nil {
+			t.Fatalf("failed to write response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -85,9 +91,11 @@ func TestDirectusClient_PatchItem_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]any{
+		if err := json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]any{"id": "item-123", "updated": true},
-		})
+		}); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -126,7 +134,11 @@ func TestDirectusClient_UploadFile_Success(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to get file: %v", err)
 		}
-		defer file.Close()
+		defer func() {
+			if cerr := file.Close(); cerr != nil {
+				t.Errorf("failed to close file: %v", cerr)
+			}
+		}()
 
 		if header.Filename != "test.pdf" {
 			t.Errorf("expected filename 'test.pdf', got %s", header.Filename)
@@ -139,9 +151,11 @@ func TestDirectusClient_UploadFile_Success(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]any{
+		if err := json.NewEncoder(w).Encode(map[string]any{
 			"data": map[string]any{"id": "file-id-456"},
-		})
+		}); err != nil {
+			t.Fatalf("failed to encode response: %v", err)
+		}
 	}))
 	defer server.Close()
 
@@ -166,11 +180,8 @@ func TestDirectusClient_UploadFile_Success(t *testing.T) {
 
 func TestDirectusClient_ContextCancellation(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Simulate slow response
-		select {
-		case <-r.Context().Done():
-			return
-		}
+		// Wait for context cancellation
+		<-r.Context().Done()
 	}))
 	defer server.Close()
 

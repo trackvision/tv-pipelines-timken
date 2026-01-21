@@ -11,7 +11,7 @@ import (
 
 	"github.com/trackvision/tv-pipelines-template/configs"
 	"github.com/trackvision/tv-pipelines-template/pipelines"
-	_ "github.com/trackvision/tv-pipelines-template/pipelines/template" // Register template pipeline
+	"github.com/trackvision/tv-pipelines-template/pipelines/template"
 	"github.com/trackvision/tv-shared-go/logger"
 	"go.uber.org/zap"
 )
@@ -121,24 +121,20 @@ func runTemplateHandler(w http.ResponseWriter, r *http.Request) {
 		DirectusCMSAPIKey: os.Getenv("DIRECTUS_CMS_API_KEY"),
 	}
 
-	// Create pipeline state
-	state := pipelines.NewState(cfg)
+	// Create pipeline state with request context for cancellation
+	state := pipelines.NewState(ctx, cfg)
 	defer state.Close() // Clean up resources when done
 
 	// Create and run pipeline
-	// TODO: Import and use your pipeline package
-	// pipeline, err := template.New(state, req.ID)
-	// if err != nil {
-	//     respondError(w, err.Error(), http.StatusInternalServerError)
-	//     return
-	// }
-	// if err := pipeline.RunOnce(); err != nil {
-	//     respondError(w, err.Error(), http.StatusInternalServerError)
-	//     return
-	// }
-
-	_ = ctx   // Pass ctx to pipeline operations for cancellation
-	_ = state // suppress unused warning for template
+	pipeline, err := template.New(state, req.ID)
+	if err != nil {
+		respondError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := pipeline.RunOnce(); err != nil {
+		respondError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(runResponse{

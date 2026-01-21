@@ -57,7 +57,11 @@ func (d *DirectusClient) PostItem(ctx context.Context, collection string, item a
 	if err != nil {
 		return nil, fmt.Errorf("POST request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			logger.Warn("Failed to close response body", zap.Error(cerr))
+		}
+	}()
 
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -100,7 +104,11 @@ func (d *DirectusClient) PatchItem(ctx context.Context, collection, id string, u
 	if err != nil {
 		return fmt.Errorf("PATCH request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			logger.Warn("Failed to close response body", zap.Error(cerr))
+		}
+	}()
 
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -175,7 +183,11 @@ func (d *DirectusClient) UploadFile(ctx context.Context, params UploadFileParams
 	if err != nil {
 		return nil, fmt.Errorf("upload request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			logger.Warn("Failed to close response body", zap.Error(cerr))
+		}
+	}()
 
 	if resp.StatusCode >= 400 {
 		respBody, _ := io.ReadAll(resp.Body)
