@@ -2,7 +2,7 @@ package tasks
 
 import (
 	"testing"
-	"timken-etl/types"
+	"github.com/trackvision/tv-pipelines-template/types"
 )
 
 func TestPrepareRecord_Success(t *testing.T) {

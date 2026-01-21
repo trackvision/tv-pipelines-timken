@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"timken-etl/types"
+	"github.com/trackvision/tv-pipelines-template/types"
 )
 
 func TestFetchCOCData_Success(t *testing.T) {

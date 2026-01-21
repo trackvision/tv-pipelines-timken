@@ -3,8 +3,8 @@ package pipelines
 import (
 	"sync"
 
-	"timken-etl/configs"
-	"timken-etl/tasks"
+	"github.com/trackvision/tv-pipelines-template/configs"
+	"github.com/trackvision/tv-pipelines-template/tasks"
 )
 
 // State holds shared state between pipeline tasks

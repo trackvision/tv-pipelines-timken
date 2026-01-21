@@ -3,7 +3,7 @@ package tasks
 import (
 	"fmt"
 	"strings"
-	"timken-etl/types"
+	"github.com/trackvision/tv-pipelines-template/types"
 
 	"github.com/trackvision/tv-shared-go/logger"
 	"go.uber.org/zap"

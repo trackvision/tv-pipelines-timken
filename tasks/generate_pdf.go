@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"time"
-	"timken-etl/types"
+	"github.com/trackvision/tv-pipelines-template/types"
 
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"

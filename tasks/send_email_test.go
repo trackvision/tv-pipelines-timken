@@ -3,7 +3,7 @@ package tasks
 import (
 	"strings"
 	"testing"
-	"timken-etl/types"
+	"github.com/trackvision/tv-pipelines-template/types"
 )
 
 func TestSendEmail_EmailDisabled(t *testing.T) {

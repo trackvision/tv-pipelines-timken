@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-	"timken-etl/types"
+	"github.com/trackvision/tv-pipelines-template/types"
 
 	"github.com/trackvision/tv-shared-go/logger"
 	"go.uber.org/zap"

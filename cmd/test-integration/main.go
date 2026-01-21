@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 	"time"
-	"timken-etl/tasks"
-	"timken-etl/types"
+	"github.com/trackvision/tv-pipelines-template/tasks"
+	"github.com/trackvision/tv-pipelines-template/types"
 
 	"github.com/trackvision/tv-shared-go/logger"
 	"go.uber.org/zap"
