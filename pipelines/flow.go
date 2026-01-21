@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -44,8 +45,19 @@ func (f *Flow) AddTask(name string, fn func() error, deps ...string) {
 
 // Run executes all tasks in dependency order
 func (f *Flow) Run(ctx context.Context) error {
-	logger := zap.L().With(zap.String("flow", f.name))
-	logger.Info("flow started")
+	logger := zap.L().With(zap.String("pipeline", f.name))
+	startTime := time.Now()
+
+	// Log pipeline start with task list
+	taskNames := make([]string, 0, len(f.order))
+	for _, name := range f.order {
+		taskNames = append(taskNames, name)
+	}
+	logger.Info("pipeline started",
+		zap.Int("task_count", len(f.tasks)),
+		zap.Strings("tasks", taskNames))
+
+	completedCount := 0
 
 	for {
 		// Find tasks that can run (all deps satisfied, not done, not running)
@@ -53,7 +65,10 @@ func (f *Flow) Run(ctx context.Context) error {
 		if len(ready) == 0 {
 			// Check if we're done or stuck
 			if f.allDone() {
-				logger.Info("flow complete")
+				elapsed := time.Since(startTime)
+				logger.Info("pipeline completed",
+					zap.Duration("duration", elapsed),
+					zap.Int("tasks_completed", completedCount))
 				return nil
 			}
 			// Check for errors
@@ -62,7 +77,7 @@ func (f *Flow) Run(ctx context.Context) error {
 					return t.err
 				}
 			}
-			return fmt.Errorf("flow %s: deadlock detected", f.name)
+			return fmt.Errorf("pipeline %s: deadlock detected", f.name)
 		}
 
 		// Run ready tasks in parallel
@@ -74,14 +89,22 @@ func (f *Flow) Run(ctx context.Context) error {
 			wg.Add(1)
 			go func(t *task) {
 				defer wg.Done()
-				logger.Info("task started", zap.String("task", t.name))
+				taskStart := time.Now()
+				logger.Info("step started", zap.String("step", t.name))
+
 				if err := t.fn(); err != nil {
 					t.err = fmt.Errorf("%s: %w", t.name, err)
 					errChan <- t.err
-					logger.Error("task failed", zap.String("task", t.name), zap.Error(err))
+					logger.Error("step failed",
+						zap.String("step", t.name),
+						zap.Error(err),
+						zap.Duration("duration", time.Since(taskStart)))
 				} else {
 					t.done = true
-					logger.Info("task complete", zap.String("task", t.name))
+					completedCount++
+					logger.Info("step completed",
+						zap.String("step", t.name),
+						zap.Duration("duration", time.Since(taskStart)))
 				}
 				t.running = false
 			}(t)
@@ -93,6 +116,11 @@ func (f *Flow) Run(ctx context.Context) error {
 		// Check for errors
 		for err := range errChan {
 			if err != nil {
+				elapsed := time.Since(startTime)
+				logger.Error("pipeline failed",
+					zap.Duration("duration", elapsed),
+					zap.Int("tasks_completed", completedCount),
+					zap.Error(err))
 				return err
 			}
 		}

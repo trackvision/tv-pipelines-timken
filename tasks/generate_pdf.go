@@ -3,7 +3,9 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
+	"strings"
 
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
@@ -12,10 +14,22 @@ import (
 	"tv-pipelines-timken/configs"
 )
 
+// silentLogger suppresses chromedp's internal error logs (e.g., unmarshal warnings)
+type silentLogger struct{}
+
+func (s silentLogger) Printf(format string, args ...interface{}) {
+	// Suppress known harmless warnings about newer Chrome protocol features
+	msg := fmt.Sprintf(format, args...)
+	if strings.Contains(msg, "could not unmarshal event") {
+		return
+	}
+	// Log other errors normally
+	log.Printf(format, args...)
+}
+
 // GeneratePDF generates a PDF from the COC viewer webpage using chromedp
 func GeneratePDF(ctx context.Context, cfg *configs.Config, sscc string) ([]byte, string, error) {
 	logger := zap.L().With(zap.String("task", "generate_pdf"), zap.String("sscc", sscc))
-	logger.Info("generate_pdf started")
 
 	viewerURL, err := url.Parse(cfg.COCViewerBaseURL)
 	if err != nil {
@@ -36,12 +50,13 @@ func GeneratePDF(ctx context.Context, cfg *configs.Config, sscc string) ([]byte,
 	allocCtx, cancel := chromedp.NewExecAllocator(ctx, opts...)
 	defer cancel()
 
-	chromeCtx, cancel := chromedp.NewContext(allocCtx)
+	// Use silent logger to suppress unmarshal warnings
+	chromeCtx, cancel := chromedp.NewContext(allocCtx, chromedp.WithErrorf(silentLogger{}.Printf))
 	defer cancel()
 
 	var pdfData []byte
 
-	logger.Info("navigating to viewer", zap.String("url", viewerURL.String()))
+	logger.Info("navigating to COC viewer", zap.String("url", viewerURL.String()))
 
 	err = chromedp.Run(chromeCtx,
 		chromedp.Navigate(viewerURL.String()),
@@ -70,7 +85,7 @@ func GeneratePDF(ctx context.Context, cfg *configs.Config, sscc string) ([]byte,
 	}
 
 	filename := fmt.Sprintf("COC-%s.pdf", sscc)
-	logger.Info("generate_pdf complete", zap.Int("size_bytes", len(pdfData)))
+	logger.Info("PDF generated", zap.Int("size_bytes", len(pdfData)), zap.String("filename", filename))
 
 	return pdfData, filename, nil
 }
