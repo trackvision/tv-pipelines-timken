@@ -1,0 +1,19 @@
+# Binaries
+bin/
+pipeline
+coc-pipeline
+
+# Environment
+.env
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Temp files
+*.log
+todo.md
+migration-plan.md
