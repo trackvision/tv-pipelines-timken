@@ -1,0 +1,30 @@
+# github.com/deckarep/golang-set/v2 v2.7.0
+## explicit; go 1.18
+github.com/deckarep/golang-set/v2
+# github.com/go-jose/go-jose/v3 v3.0.4
+## explicit; go 1.12
+github.com/go-jose/go-jose/v3/json
+# github.com/go-stack/stack v1.8.1
+## explicit; go 1.17
+github.com/go-stack/stack
+# github.com/playwright-community/playwright-go v0.5200.1
+## explicit; go 1.22
+github.com/playwright-community/playwright-go
+github.com/playwright-community/playwright-go/internal/safe
+# github.com/trackvision/tv-shared-go/logger v1.0.1
+## explicit; go 1.23
+github.com/trackvision/tv-shared-go/logger
+# go.uber.org/multierr v1.11.0
+## explicit; go 1.19
+go.uber.org/multierr
+# go.uber.org/zap v1.27.0
+## explicit; go 1.19
+go.uber.org/zap
+go.uber.org/zap/buffer
+go.uber.org/zap/internal
+go.uber.org/zap/internal/bufferpool
+go.uber.org/zap/internal/color
+go.uber.org/zap/internal/exit
+go.uber.org/zap/internal/pool
+go.uber.org/zap/internal/stacktrace
+go.uber.org/zap/zapcore
