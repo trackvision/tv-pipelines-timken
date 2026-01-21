@@ -9,6 +9,7 @@ import (
 
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
+	"github.com/trackvision/tv-shared-go/logger"
 	"go.uber.org/zap"
 
 	"tv-pipelines-timken/configs"
@@ -29,8 +30,6 @@ func (s silentLogger) Printf(format string, args ...interface{}) {
 
 // GeneratePDF generates a PDF from the COC viewer webpage using chromedp
 func GeneratePDF(ctx context.Context, cfg *configs.Config, sscc string) ([]byte, string, error) {
-	logger := zap.L().With(zap.String("task", "generate_pdf"), zap.String("sscc", sscc))
-
 	viewerURL, err := url.Parse(cfg.COCViewerBaseURL)
 	if err != nil {
 		return nil, "", fmt.Errorf("invalid COC viewer URL: %w", err)
@@ -56,7 +55,9 @@ func GeneratePDF(ctx context.Context, cfg *configs.Config, sscc string) ([]byte,
 
 	var pdfData []byte
 
-	logger.Info("navigating to COC viewer", zap.String("url", viewerURL.String()))
+	logger.Info("navigating to COC viewer",
+		zap.String("sscc", sscc),
+		zap.String("url", viewerURL.String()))
 
 	err = chromedp.Run(chromeCtx,
 		chromedp.Navigate(viewerURL.String()),
@@ -85,7 +86,10 @@ func GeneratePDF(ctx context.Context, cfg *configs.Config, sscc string) ([]byte,
 	}
 
 	filename := fmt.Sprintf("COC-%s.pdf", sscc)
-	logger.Info("PDF generated", zap.Int("size_bytes", len(pdfData)), zap.String("filename", filename))
+	logger.Info("PDF generated",
+		zap.String("sscc", sscc),
+		zap.Int("size_bytes", len(pdfData)),
+		zap.String("filename", filename))
 
 	return pdfData, filename, nil
 }
