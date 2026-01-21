@@ -5,6 +5,7 @@ go 1.24.0
 toolchain go1.24.12
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
 	github.com/chromedp/chromedp v0.14.2
 	github.com/fieldryand/goflow/v2 v2.2.1
