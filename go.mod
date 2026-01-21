@@ -9,6 +9,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
 	github.com/chromedp/chromedp v0.14.2
 	github.com/fieldryand/goflow/v2 v2.2.1
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/trackvision/tv-shared-go/database v1.0.7
 	github.com/trackvision/tv-shared-go/logger v1.0.1
@@ -29,7 +30,6 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.14.0 // indirect
-	github.com/go-sql-driver/mysql v1.8.1 // indirect
 	github.com/gobwas/httphead v0.1.0 // indirect
 	github.com/gobwas/pool v0.2.1 // indirect
 	github.com/gobwas/ws v1.4.0 // indirect
