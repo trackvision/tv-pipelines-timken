@@ -5,9 +5,10 @@ ENV GOPRIVATE=github.com/trackvision
 
 WORKDIR /app
 
-# Configure git to use SSH for private repos
-RUN mkdir -p -m 0700 ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
-RUN git config --global url."git@github.com:".insteadOf "https://github.com/"
+# Set env for private repo
+RUN mkdir -p -m 0600 ~/.ssh \
+    && echo "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config \
+    && git config --global url."ssh://git@github.com/".insteadOf https://github.com/
 
 COPY go.mod go.sum ./
 
