@@ -1,17 +1,16 @@
 FROM golang:1.24-bullseye AS builder
 
+ARG GH_PAT
 ENV GOPRIVATE=github.com/trackvision
 
 WORKDIR /app
 
-# Set env for private repo
-RUN mkdir -p -m 0600 ~/.ssh \
-    && echo "Host github.com\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config \
-    && git config --global url."ssh://git@github.com/".insteadOf https://github.com/
+# Configure git to use PAT for private repos
+RUN git config --global url."https://${GH_PAT}@github.com/".insteadOf "https://github.com/"
 
 COPY go.mod go.sum ./
 
-RUN --mount=type=ssh go mod download
+RUN go mod download
 
 COPY . .
 
