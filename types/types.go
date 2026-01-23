@@ -50,7 +50,8 @@ type DirectusFileResponse struct {
 
 // PipelineRequest represents the incoming HTTP request
 type PipelineRequest struct {
-	SSCC string `json:"sscc"`
+	SSCC      string   `json:"sscc"`
+	SkipSteps []string `json:"skip_steps,omitempty"`
 }
 
 // PipelineResult holds the outcome of a pipeline execution

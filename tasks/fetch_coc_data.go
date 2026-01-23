@@ -45,7 +45,7 @@ func FetchCOCData(ctx context.Context, cfg *configs.Config, sscc string) (*types
 	if err != nil {
 		return nil, fmt.Errorf("fetch COC data: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)

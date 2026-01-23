@@ -35,7 +35,7 @@ func TestFetchCOCData_Success(t *testing.T) {
 				COCDocumentDate: "2024-01-15",
 			},
 		}
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -59,7 +59,7 @@ func TestFetchCOCData_Success(t *testing.T) {
 func TestFetchCOCData_NoRows(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// API returns empty array
-		json.NewEncoder(w).Encode([]types.COCItem{})
+		_ = json.NewEncoder(w).Encode([]types.COCItem{})
 	}))
 	defer server.Close()
 
@@ -76,7 +76,7 @@ func TestFetchCOCData_NoRows(t *testing.T) {
 func TestFetchCOCData_ServerError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal error"))
+		_, _ = w.Write([]byte("internal error"))
 	}))
 	defer server.Close()
 
@@ -92,7 +92,7 @@ func TestFetchCOCData_ServerError(t *testing.T) {
 
 func TestFetchCOCData_InvalidJSON(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("not valid json"))
+		_, _ = w.Write([]byte("not valid json"))
 	}))
 	defer server.Close()
 

@@ -53,7 +53,7 @@ func (c *DirectusClient) PostItem(ctx context.Context, collection string, item i
 	if err != nil {
 		return "", fmt.Errorf("post item: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -91,7 +91,7 @@ func (c *DirectusClient) PatchItem(ctx context.Context, collection, id string, u
 	if err != nil {
 		return fmt.Errorf("patch item: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -145,7 +145,7 @@ func (c *DirectusClient) UploadFile(ctx context.Context, params UploadFileParams
 	if err != nil {
 		return "", fmt.Errorf("upload file: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(resp.Body)

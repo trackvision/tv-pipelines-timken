@@ -10,6 +10,7 @@ import (
 // Config holds all environment configuration
 type Config struct {
 	Port              string
+	APIKey            string // API key for authenticating requests (CMS_API_KEY)
 	CMSBaseURL        string
 	DirectusAPIKey    string
 	COCViewerBaseURL  string
@@ -20,6 +21,10 @@ type Config struct {
 	EmailSMTPPort     string
 	EmailSMTPUser     string
 	EmailSMTPPassword string
+
+	// GCP Configuration (for logs viewer)
+	GCPProjectID    string
+	CloudRunService string
 }
 
 // Load reads configuration from environment variables and mounted secrets
@@ -30,10 +35,14 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("DIRECTUS_CMS_API_KEY: %w", err)
 	}
 
+	// API key for auth (optional - if not set, auth is disabled)
+	apiKey, _ := env.GetSecret("CMS_API_KEY")
+
 	emailSMTPPassword, _ := env.GetSecret("EMAIL_SMTP_PASSWORD") // optional
 
 	cfg := &Config{
 		Port:              getEnv("PORT", "8080"),
+		APIKey:            apiKey,
 		CMSBaseURL:        os.Getenv("CMS_BASE_URL"),
 		DirectusAPIKey:    directusAPIKey,
 		COCViewerBaseURL:  os.Getenv("COC_VIEWER_BASE_URL"),
@@ -44,6 +53,8 @@ func Load() (*Config, error) {
 		EmailSMTPPort:     getEnv("EMAIL_SMTP_PORT", "587"),
 		EmailSMTPUser:     getEnv("EMAIL_SMTP_USER", "resend"),
 		EmailSMTPPassword: emailSMTPPassword,
+		GCPProjectID:      os.Getenv("GCP_PROJECT_ID"),
+		CloudRunService:   os.Getenv("CLOUD_RUN_SERVICE"),
 	}
 
 	if err := cfg.validate(); err != nil {

@@ -46,7 +46,7 @@ func TestDirectusClient_PostItem(t *testing.T) {
 				ID string `json:"id"`
 			}{ID: "created-id-123"},
 		}
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -102,7 +102,7 @@ func TestDirectusClient_UploadFile(t *testing.T) {
 		response := types.DirectusResponse[types.DirectusFileResponse]{
 			Data: types.DirectusFileResponse{ID: "file-id-456"},
 		}
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
 
@@ -130,7 +130,7 @@ func TestDirectusClient_UploadFile(t *testing.T) {
 func TestDirectusClient_PostItem_Error(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal error"))
+		_, _ = w.Write([]byte("internal error"))
 	}))
 	defer server.Close()
 

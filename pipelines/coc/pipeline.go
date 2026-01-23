@@ -13,6 +13,16 @@ import (
 	"tv-pipelines-timken/types"
 )
 
+// Steps lists all task names in execution order (for API discovery)
+var Steps = []string{
+	"generate_pdf",
+	"fetch_coc_data",
+	"prepare_record",
+	"create_certification",
+	"upload_pdf",
+	"send_email",
+}
+
 // Run executes the COC pipeline
 func Run(ctx context.Context, cms *tasks.DirectusClient, cfg *configs.Config, sscc string) (*types.PipelineResult, error) {
 	logger := zap.L().With(zap.String("sscc", sscc))
